@@ -2,22 +2,23 @@
 const VERSION = '1.1.0';
 const CACHE = `nutriwise-care-v${VERSION}`;
 
+/* Relative paths work under any subpath (e.g. GitHub Pages /nutriwise-care/) */
 const SHELL = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/db.js',
-  '/wolfram.js',
-  '/notifications.js',
-  '/log.js',
-  '/foods.js',
-  '/medicines.js',
-  '/reports.js',
-  '/profile.js',
-  '/manifest.json',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg'
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './db.js',
+  './wolfram.js',
+  './notifications.js',
+  './log.js',
+  './foods.js',
+  './medicines.js',
+  './reports.js',
+  './profile.js',
+  './manifest.json',
+  './icons/icon-192.svg',
+  './icons/icon-512.svg'
 ];
 
 self.addEventListener('install', event => {
