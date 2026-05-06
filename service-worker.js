@@ -1,5 +1,5 @@
 /* NutriCare Service Worker — version managed here for cache busting */
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 const CACHE = `nutriwise-care-v${VERSION}`;
 
 /* Relative paths work under any subpath (e.g. GitHub Pages /nutriwise-care/) */
@@ -17,8 +17,9 @@ const SHELL = [
   './reports.js',
   './profile.js',
   './manifest.json',
-  './icons/icon-192.svg',
-  './icons/icon-512.svg'
+  './icons/icon-180.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 self.addEventListener('install', event => {
