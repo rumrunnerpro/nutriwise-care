@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="40" fill="#4a7c6f"/>
+  <circle cx="96" cy="78" r="30" fill="none" stroke="#fff" stroke-width="6"/>
+  <path d="M82 78 Q96 60 110 78 Q96 96 82 78Z" fill="#fff" opacity="0.9"/>
+  <rect x="60" y="118" width="72" height="8" rx="4" fill="#fff" opacity="0.8"/>
+  <rect x="72" y="134" width="48" height="8" rx="4" fill="#fff" opacity="0.6"/>
+  <circle cx="96" cy="78" r="4" fill="#4a7c6f"/>
+  <text x="96" y="170" text-anchor="middle" font-family="system-ui" font-size="18" font-weight="700" fill="#fff" opacity="0.9">NutriCare</text>
+</svg>

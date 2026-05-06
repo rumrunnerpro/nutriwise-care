@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#4a7c6f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="NutriCare">
+  <meta name="description" content="Nutrition, medicine, and recovery tracker">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <link rel="stylesheet" href="styles.css">
+
+  <title>NutriCare</title>
+</head>
+<body>
+
+  <!-- Version update banner -->
+  <div class="version-banner" id="version-banner" onclick="NCApp.reloadForUpdate()">
+    🔄 A new version of NutriCare is available — tap to update
+  </div>
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topbar-title">🌿 NutriCare</div>
+    <div class="topbar-right">
+      <span id="caregiver-badge" class="caregiver-badge hidden">Caregiver</span>
+      <button class="topbar-btn" onclick="NCApp.showDateNav()">📅</button>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="main" id="main">
+    <div id="tab-today" class="tab-panel">
+      <div class="empty-state" style="margin-top:60px">
+        <div class="empty-state-icon">🌿</div>
+        <div class="empty-state-title">Loading…</div>
+      </div>
+    </div>
+    <div id="tab-foods" class="tab-panel">
+      <div class="empty-state" style="margin-top:60px">
+        <div class="empty-state-icon">🍽️</div>
+        <div class="empty-state-title">Loading…</div>
+      </div>
+    </div>
+    <div id="tab-medicines" class="tab-panel">
+      <div class="empty-state" style="margin-top:60px">
+        <div class="empty-state-icon">💊</div>
+        <div class="empty-state-title">Loading…</div>
+      </div>
+    </div>
+    <div id="tab-reports" class="tab-panel">
+      <div class="empty-state" style="margin-top:60px">
+        <div class="empty-state-icon">📊</div>
+        <div class="empty-state-title">Loading…</div>
+      </div>
+    </div>
+    <div id="tab-profile" class="tab-panel">
+      <div class="empty-state" style="margin-top:60px">
+        <div class="empty-state-icon">👤</div>
+        <div class="empty-state-title">Loading…</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom navigation -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-btn" data-tab="today" onclick="NC.navigateTo('today')">
+      <span class="nav-icon">📋</span>
+      <span>Today</span>
+    </button>
+    <button class="nav-btn" data-tab="foods" onclick="NC.navigateTo('foods')">
+      <span class="nav-icon">🍽️</span>
+      <span>Foods</span>
+    </button>
+    <button class="nav-btn" data-tab="medicines" onclick="NC.navigateTo('medicines')">
+      <span class="nav-icon">💊</span>
+      <span>Medicines</span>
+      <span id="med-badge" class="badge hidden">!</span>
+    </button>
+    <button class="nav-btn" data-tab="reports" onclick="NC.navigateTo('reports')">
+      <span class="nav-icon">📊</span>
+      <span>Reports</span>
+    </button>
+    <button class="nav-btn" data-tab="profile" onclick="NC.navigateTo('profile')">
+      <span class="nav-icon">👤</span>
+      <span>Profile</span>
+    </button>
+  </nav>
+
+  <!-- Drawer overlay -->
+  <div class="overlay" id="overlay" onclick="NCApp.overlayClick(event)">
+    <div class="drawer" id="drawer">
+      <div class="drawer-handle"></div>
+      <div class="drawer-title" id="drawer-title"></div>
+      <div class="drawer-body" id="drawer-body"></div>
+      <div class="drawer-footer" id="drawer-footer"></div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Caregiver PIN modal -->
+  <div class="pin-modal" id="pin-modal">
+    <div class="pin-box">
+      <div class="pin-title" id="pin-title">Caregiver Access</div>
+      <div class="pin-subtitle" id="pin-subtitle">Enter your 4-digit PIN</div>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+      </div>
+      <div class="pin-keypad">
+        <button class="pin-key" onclick="NCMeds.pinKeyPress('1')">1</button>
+        <button class="pin-key" onclick="NCMeds.pinKeyPress('2')">2</button>
+        <button class="pin-key" onclick="NCMeds.pinKeyPress('3')">3</button>
+        <button class="pin-key" onclick="NCMeds.pinKeyPress('4')">4</button>
+        <button class="pin-key" onclick="NCMeds.pinKeyPress('5')">5</button>
+        <button class="pin-key" onclick="NCMeds.pinKeyPress('6')">6</button>
+        <button class="pin-key" onclick="NCMeds.pinKeyPress('7')">7</button>
+        <button class="pin-key" onclick="NCMeds.pinKeyPress('8')">8</button>
+        <button class="pin-key" onclick="NCMeds.pinKeyPress('9')">9</button>
+        <button class="pin-key" onclick="NCMeds.closePinModal()" style="font-size:0.85rem;color:var(--text-muted)">Cancel</button>
+        <button class="pin-key" onclick="NCMeds.pinKeyPress('0')">0</button>
+        <button class="pin-key del" onclick="NCMeds.pinKeyPress('del')">⌫</button>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+    </div>
+  </div>
+
+  <!-- Date nav drawer (for Today tab date navigation) -->
+
+  <!-- Core scripts (order matters) -->
+  <script src="app.js"></script>
+  <script src="db.js"></script>
+  <script src="wolfram.js"></script>
+  <script src="notifications.js"></script>
+  <script src="log.js"></script>
+  <script src="foods.js"></script>
+  <script src="medicines.js"></script>
+  <script src="reports.js"></script>
+  <script src="profile.js"></script>
+
+  <script>
+    /* ── APP BOOTSTRAP ── */
+    const NCApp = {
+
+      init() {
+        this.registerSW();
+        this.setupOverlay();
+        this.updateCaregiverUI();
+        NC.bus.on('settings:changed', () => this.updateCaregiverUI());
+
+        // Check for profile — if missing, go to profile tab first
+        const profile = NC.getProfile();
+        if (!profile) {
+          NC.navigateTo('profile');
+        } else {
+          NC.navigateTo('today');
+        }
+
+        // Init notifications
+        NCNotify.init();
+
+        // Listen for missed meds to show badge
+        NC.bus.on('med:missed', () => this.updateMedBadge());
+        NC.bus.on('medlog:changed', () => this.updateMedBadge());
+        NC.bus.on('medicines:changed', () => this.updateMedBadge());
+
+        // Check missed doses every minute
+        this.updateMedBadge();
+        setInterval(() => this.updateMedBadge(), 60000);
+
+        // SW message for MED_TAKEN / MED_SNOOZE when app is open
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.addEventListener('message', (e) => {
+            const { type, medicineId, scheduledTime, minutes } = e.data || {};
+            if (type === 'MED_TAKEN') {
+              NC.logMedTaken(medicineId, scheduledTime);
+              NC.showToast('Medicine marked taken ✓', 'success');
+              this.updateMedBadge();
+              NCMeds?.renderToPanel?.();
+            } else if (type === 'MED_SNOOZE') {
+              NC.snoozeMed(medicineId, scheduledTime, minutes || 30);
+              NC.showToast(`Snoozed ${minutes || 30} minutes`, 'info');
+              NCNotify?.scheduleAll();
+              NCMeds?.renderToPanel?.();
+            }
+          });
+        }
+      },
+
+      registerSW() {
+        if (!('serviceWorker' in navigator)) return;
+        navigator.serviceWorker.register('service-worker.js').then(reg => {
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker?.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                document.getElementById('version-banner')?.classList.add('show');
+              }
+            });
+          });
+          // Check version
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'VERSION_CHECK' });
+          }
+        }).catch(e => console.warn('SW registration failed:', e));
+      },
+
+      reloadForUpdate() {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistration().then(reg => {
+            reg?.waiting?.postMessage({ type: 'SKIP_WAITING' });
+          });
+        }
+        window.location.reload();
+      },
+
+      setupOverlay() {
+        // Nothing needed — onclick on overlay handles close
+      },
+
+      overlayClick(e) {
+        if (e.target === document.getElementById('overlay')) {
+          NC.closeDrawer();
+        }
+      },
+
+      updateCaregiverUI() {
+        const badge = document.getElementById('caregiver-badge');
+        if (badge) badge.classList.toggle('hidden', !NC.isCaregiver());
+      },
+
+      updateMedBadge() {
+        const badge = document.getElementById('med-badge');
+        if (!badge) return;
+        const meds = NC.getMedicines().filter(m => m.active);
+        const now = Date.now();
+        let missedCount = 0;
+        meds.forEach(med => {
+          (med.times || []).forEach(hhmm => {
+            const dt = NC.hhmmToday(hhmm);
+            if (dt.getTime() >= now) return; // not yet due
+            const scheduledTime = dt.toISOString();
+            const log = NC.getMedLogEntry(med.id, scheduledTime);
+            if (!log || (!log.takenAt && !log.skipped && (!log.snoozedUntil || new Date(log.snoozedUntil).getTime() < now))) {
+              missedCount++;
+            }
+          });
+        });
+        badge.textContent = missedCount > 9 ? '9+' : missedCount;
+        badge.classList.toggle('hidden', missedCount === 0);
+      },
+
+      showDateNav() {
+        const today = NC.today();
+        NC.openDrawer(
+          'Navigate by Date',
+          `<div class="form-group">
+            <label class="form-label">Select Date</label>
+            <input type="date" class="form-input" id="date-nav-input" value="${today}" max="${today}">
+          </div>
+          <div class="section-head" style="margin-top:4px">Quick</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${[0,1,2,3,6].map(d => {
+              const dt = new Date(); dt.setDate(dt.getDate() - d);
+              const ds = dt.toISOString().slice(0,10);
+              const label = d === 0 ? 'Today' : d === 1 ? 'Yesterday' : `${d} days ago`;
+              return `<button class="btn btn-sm btn-secondary" onclick="NCApp.goDate('${ds}')">${label}</button>`;
+            }).join('')}
+          </div>`,
+          `<div style="display:flex;gap:8px;width:100%">
+            <button class="btn btn-secondary" onclick="NC.closeDrawer()">Cancel</button>
+            <button class="btn btn-primary flex-1" onclick="NCApp.goDateFromInput()">Go</button>
+          </div>`
+        );
+      },
+
+      goDate(date) {
+        NC.closeDrawer();
+        const activeTab = document.querySelector('.tab-panel.active')?.id?.replace('tab-', '');
+        if (activeTab === 'today') { NCLog.renderToPanel && (NCLog._currentDate = date, NCLog.renderToPanel()); }
+        if (activeTab === 'reports') NCReports.setDate(date);
+      },
+
+      goDateFromInput() {
+        const val = document.getElementById('date-nav-input')?.value;
+        if (val) this.goDate(val);
+      }
+    };
+
+    /* Boot */
+    document.addEventListener('DOMContentLoaded', () => NCApp.init());
+  </script>
+</body>
+</html>
