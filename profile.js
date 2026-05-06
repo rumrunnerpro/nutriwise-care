@@ -72,7 +72,7 @@
             </button>
           </div>
         </div>
-        <div style="text-align:center;font-size:0.75rem;color:var(--text-muted);padding:12px 0">NutriCare v1.1.3 · Offline-ready PWA</div>
+        <div style="text-align:center;font-size:0.75rem;color:var(--text-muted);padding:12px 0">NutriCare v1.1.4 · Offline-ready PWA</div>
       </div>
     `;
   };
@@ -323,7 +323,7 @@
       '🔬 WolframAlpha Setup',
       `<div style="background:var(--warning-bg);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;font-size:0.85rem;line-height:1.5;color:var(--warning)">
         <strong>Proxy required.</strong> Browsers block direct WolframAlpha requests (CORS policy).
-        You need a one-time free proxy setup before lookups will work.
+        You need a one-time free proxy setup before lookups will work. Detlef will help with this.
       </div>
 
       <div style="font-weight:700;margin-bottom:10px">Step 1 — Get a WolframAlpha App ID</div>
