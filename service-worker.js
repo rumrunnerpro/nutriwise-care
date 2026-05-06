@@ -1,5 +1,5 @@
 /* NutriCare Service Worker — version managed here for cache busting */
-const VERSION = '1.1.1';
+const VERSION = '1.1.4';
 const CACHE = `nutriwise-care-v${VERSION}`;
 
 /* Relative paths work under any subpath (e.g. GitHub Pages /nutriwise-care/) */

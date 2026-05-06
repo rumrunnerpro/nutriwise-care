@@ -197,28 +197,17 @@
 
       registerSW() {
         if (!('serviceWorker' in navigator)) return;
-        navigator.serviceWorker.register('service-worker.js').then(reg => {
-          reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
-            newWorker?.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                document.getElementById('version-banner')?.classList.add('show');
-              }
-            });
-          });
-          // Check version
-          if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ type: 'VERSION_CHECK' });
-          }
-        }).catch(e => console.warn('SW registration failed:', e));
+        /* When a new SW activates and claims this client, reload automatically.
+           prevController guard prevents a reload on the very first install. */
+        const prevController = navigator.serviceWorker.controller;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (prevController) window.location.reload();
+        });
+        navigator.serviceWorker.register('service-worker.js')
+          .catch(e => console.warn('SW registration failed:', e));
       },
 
       reloadForUpdate() {
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistration().then(reg => {
-            reg?.waiting?.postMessage({ type: 'SKIP_WAITING' });
-          });
-        }
         window.location.reload();
       },
 
