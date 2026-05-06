@@ -77,7 +77,15 @@
 
   /* ── ID & DATE UTILS ── */
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  const today = () => new Date().toISOString().slice(0, 10);
+  /* Local-date string — avoids UTC rollover bug from toISOString() */
+  const localDateStr = (d) => {
+    const dt = d || new Date();
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  const today = () => localDateStr();
   const formatDate = (d) => {
     const dt = d ? new Date(d) : new Date();
     return dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -286,7 +294,7 @@
   const getMedLogs = () => store.get(KEYS.medLogs, []);
   const getMedLogsForDate = (date) => getMedLogs().filter(l => l.date === date);
   const logMedTaken = (medicineId, scheduledTime) => {
-    const date = new Date(scheduledTime).toISOString().slice(0, 10);
+    const date = localDateStr(new Date(scheduledTime));
     store.update(KEYS.medLogs, logs => {
       const existing = logs.find(l => l.medicineId === medicineId && l.scheduledTime === scheduledTime);
       if (existing) return logs.map(l => l.medicineId === medicineId && l.scheduledTime === scheduledTime
@@ -300,7 +308,7 @@
     bus.emit('medlog:changed');
   };
   const logMedSkipped = (medicineId, scheduledTime) => {
-    const date = new Date(scheduledTime).toISOString().slice(0, 10);
+    const date = localDateStr(new Date(scheduledTime));
     store.update(KEYS.medLogs, logs => {
       const existing = logs.find(l => l.medicineId === medicineId && l.scheduledTime === scheduledTime);
       if (existing) return logs.map(l => l.medicineId === medicineId && l.scheduledTime === scheduledTime
@@ -311,7 +319,7 @@
     bus.emit('medlog:changed');
   };
   const snoozeMed = (medicineId, scheduledTime, minutes) => {
-    const date = new Date(scheduledTime).toISOString().slice(0, 10);
+    const date = localDateStr(new Date(scheduledTime));
     const snoozedUntil = new Date(Date.now() + minutes * 60000).toISOString();
     store.update(KEYS.medLogs, logs => {
       const existing = logs.find(l => l.medicineId === medicineId && l.scheduledTime === scheduledTime);
@@ -448,7 +456,7 @@
     let count = 0;
     for (let i = 0; i < days; i++) {
       const d = new Date(now); d.setDate(d.getDate() - i);
-      const ds = d.toISOString().slice(0, 10);
+      const ds = localDateStr(d);
       const dayLogs = allLogs.filter(l => l.date === ds);
       if (dayLogs.length) {
         const totals = sumNutrients(dayLogs);
@@ -469,7 +477,7 @@
     const now = new Date();
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(now); d.setDate(d.getDate() - i);
-      const ds = d.toISOString().slice(0, 10);
+      const ds = localDateStr(d);
       const logs = getLogsForDate(ds);
       out.push({ date: ds, totals: sumNutrients(logs), count: logs.length });
     }
@@ -515,7 +523,7 @@
   window.NC = {
     KEYS, NUTRIENTS, GROUP_META,
     store, bus,
-    uid, today, formatDate, formatTime, hhmm, hhmmToday,
+    uid, today, localDateStr, formatDate, formatTime, hhmm, hhmmToday,
     zeroNutrients, scaleNutrients, addNutrients,
     getProfile, saveProfile,
     getTargets, saveTargets, DEFAULT_TARGETS,
