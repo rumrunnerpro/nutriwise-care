@@ -72,7 +72,7 @@
             </button>
           </div>
         </div>
-        <div style="text-align:center;font-size:0.75rem;color:var(--text-muted);padding:12px 0">NutriCare v1.1.4 · Offline-ready PWA</div>
+        <div style="text-align:center;font-size:0.75rem;color:var(--text-muted);padding:12px 0">NutriCare v1.1.5 · Offline-ready PWA</div>
       </div>
     `;
   };

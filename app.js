@@ -87,7 +87,13 @@
   };
   const today = () => localDateStr();
   const formatDate = (d) => {
-    const dt = d ? new Date(d) : new Date();
+    /* Parse YYYY-MM-DD as local midnight. new Date('YYYY-MM-DD') is UTC
+       midnight, which rolls back to the previous day in negative-offset zones. */
+    if (!d) return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const parts = String(d).split('-');
+    const dt = parts.length === 3
+      ? new Date(+parts[0], +parts[1] - 1, +parts[2])
+      : new Date(d);
     return dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   };
   const formatTime = (iso) => {
@@ -487,7 +493,7 @@
   /* ── EXPORT DATA ── */
   const exportData = () => {
     const data = {
-      version: '1.1.4',
+      version: '1.1.5',
       exportedAt: new Date().toISOString(),
       profile: getProfile(),
       targets: getTargets(),
