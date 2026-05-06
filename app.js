@@ -487,7 +487,7 @@
   /* ── EXPORT DATA ── */
   const exportData = () => {
     const data = {
-      version: '1.0.0',
+      version: '1.1.2',
       exportedAt: new Date().toISOString(),
       profile: getProfile(),
       targets: getTargets(),

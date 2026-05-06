@@ -1,8 +1,8 @@
 {
   "name": "NutriCare",
   "short_name": "NutriCare",
-  "description": "Nutrition, medicine, and recovery tracker — v1.1.2",
-  "version": "1.1.2",
+  "description": "Nutrition, medicine, and recovery tracker — v1.1.3",
+  "version": "1.1.3",
   "start_url": "https://rumrunnerpro.github.io/nutriwise-care/",
   "display": "standalone",
   "background_color": "#f7f4ef",
