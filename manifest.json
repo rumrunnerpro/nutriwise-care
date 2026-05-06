@@ -1,7 +1,7 @@
 {
   "name": "NutriCare",
   "short_name": "NutriCare",
-  "description": "Nutrition, medicine, and recovery tracker — v1.1.0",
+  "description": "Nutrition, medicine, and recovery tracker — v1.1.1",
   "version": "1.1.0",
   "start_url": "./",
   "display": "standalone",
