@@ -312,57 +312,86 @@
 
   /* ── WOLFRAMALPHA APP ID ── */
   const editWAAppId = () => {
-    const current = (typeof NCWolfram !== 'undefined' && NCWolfram.getAppId()) || '';
-    const maskedCurrent = current
-      ? `${current.slice(0, 4)}${'·'.repeat(Math.max(0, current.length - 8))}${current.slice(-4)}`
+    const wa = typeof NCWolfram !== 'undefined' ? NCWolfram : null;
+    const appId    = wa?.getAppId()    || '';
+    const proxyUrl = wa?.getProxyUrl() || '';
+    const maskedId = appId
+      ? `${appId.slice(0, 4)}${'·'.repeat(Math.max(0, appId.length - 8))}${appId.slice(-4)}`
       : '';
 
     NC.openDrawer(
-      '🔬 WolframAlpha App ID',
-      `<div style="font-size:0.88rem;color:var(--text-muted);line-height:1.55;margin-bottom:18px">
-        With a WolframAlpha App ID, NutriCare can look up nutrition facts for any food
-        and auto-fill the nutrient fields when you add a custom food. The Free tier
-        (<strong>2,000 queries/month</strong>) is more than enough for daily use.
-        <br><br>
-        Get your free App ID at <strong>developer.wolframalpha.com</strong>
-        → "Get an AppID" → create an app → copy the App ID.
-        Select <strong>Full Results API</strong> access.
+      '🔬 WolframAlpha Setup',
+      `<div style="background:var(--warning-bg);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;font-size:0.85rem;line-height:1.5;color:var(--warning)">
+        <strong>Proxy required.</strong> Browsers block direct WolframAlpha requests (CORS policy).
+        You need a one-time free proxy setup before lookups will work.
+      </div>
+
+      <div style="font-weight:700;margin-bottom:10px">Step 1 — Get a WolframAlpha App ID</div>
+      <div style="font-size:0.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:14px">
+        Go to <strong>developer.wolframalpha.com</strong> → Get an AppID → create an app →
+        copy the App ID. Free tier = 2,000 queries/month.
       </div>
       <div class="form-group">
-        <label class="form-label">App ID${current ? ` <span style="font-weight:400;color:var(--text-muted)">(currently: ${maskedCurrent})</span>` : ''}</label>
+        <label class="form-label">App ID${maskedId ? ` <span style="font-weight:400;color:var(--text-muted)">(${maskedId})</span>` : ''}</label>
         <input type="text" class="form-input" id="wa-appid-input"
-          value="${current}"
+          value="${appId}"
           placeholder="e.g. XXXXXX-XXXXXXXXXX"
           autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
           style="font-family:monospace">
-        <div class="form-hint">Stored only on this device in localStorage. Never transmitted except to api.wolframalpha.com.</div>
       </div>
-      ${current ? `
-        <button class="btn btn-danger btn-full" onclick="NCProfile.clearWAAppId()" style="margin-top:4px">
-          Remove App ID
-        </button>` : ''}`,
+
+      <hr class="divider">
+      <div style="font-weight:700;margin-bottom:10px">Step 2 — Deploy the CORS proxy</div>
+      <div style="font-size:0.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:14px">
+        1. Go to <strong>workers.cloudflare.com</strong> — free account, no credit card.<br>
+        2. Create Worker → paste the contents of <strong>wolfram-proxy-worker.js</strong>
+           (in the repo root) → Deploy.<br>
+        3. Copy the worker URL (e.g. <em>https://my-worker.username.workers.dev</em>)
+           and paste it below.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Proxy URL${proxyUrl ? ' <span style="color:var(--success)">✓</span>' : ''}</label>
+        <input type="text" class="form-input" id="wa-proxy-input"
+          value="${proxyUrl}"
+          placeholder="https://my-worker.username.workers.dev"
+          autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+          style="font-family:monospace">
+        <div class="form-hint">Your App ID is sent to this URL, which forwards it to WolframAlpha.</div>
+      </div>
+
+      ${(appId || proxyUrl) ? `
+        <hr class="divider">
+        <button class="btn btn-danger btn-full" onclick="NCProfile.clearWAConfig()">Remove All WolframAlpha Settings</button>
+      ` : ''}`,
       `<div style="display:flex;gap:8px;width:100%">
         <button class="btn btn-secondary" onclick="NC.closeDrawer()">Cancel</button>
-        <button class="btn btn-primary flex-1" onclick="NCProfile.saveWAAppId()">Save App ID</button>
+        <button class="btn btn-primary flex-1" onclick="NCProfile.saveWAAppId()">Save</button>
       </div>`
     );
   };
 
   const saveWAAppId = () => {
-    const val = document.getElementById('wa-appid-input')?.value?.trim();
-    if (!val) { NC.showToast('App ID cannot be empty', 'error'); return; }
     if (typeof NCWolfram === 'undefined') { NC.showToast('WolframAlpha module not loaded', 'error'); return; }
-    NCWolfram.setAppId(val);
+    const appId    = document.getElementById('wa-appid-input')?.value?.trim();
+    const proxyUrl = document.getElementById('wa-proxy-input')?.value?.trim();
+    if (!appId) { NC.showToast('App ID is required', 'error'); return; }
+    NCWolfram.setAppId(appId);
+    NCWolfram.setProxyUrl(proxyUrl || null);
     NC.closeDrawer();
-    NC.showToast('WolframAlpha App ID saved ✓', 'success');
+    const msg = proxyUrl ? 'WolframAlpha configured ✓' : 'App ID saved — add a proxy URL to enable lookups';
+    NC.showToast(msg, proxyUrl ? 'success' : 'warning');
     renderToPanel();
   };
 
   const clearWAAppId = () => {
-    if (!confirm('Remove the WolframAlpha App ID? Nutrition lookup will be disabled.')) return;
-    if (typeof NCWolfram !== 'undefined') NCWolfram.setAppId(null);
+    clearWAConfig();
+  };
+
+  const clearWAConfig = () => {
+    if (!confirm('Remove all WolframAlpha settings? Nutrition lookup will be disabled.')) return;
+    if (typeof NCWolfram !== 'undefined') { NCWolfram.setAppId(null); NCWolfram.setProxyUrl(null); }
     NC.closeDrawer();
-    NC.showToast('App ID removed', 'info');
+    NC.showToast('WolframAlpha settings removed', 'info');
     renderToPanel();
   };
 
@@ -382,6 +411,6 @@
     saveProfile, editProfile, saveProfileFromDrawer,
     editTargets, saveTargets, resetTargets,
     requestNotifications, importPrompt,
-    editWAAppId, saveWAAppId, clearWAAppId
+    editWAAppId, saveWAAppId, clearWAAppId, clearWAConfig
   };
 })();

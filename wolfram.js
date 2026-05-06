@@ -2,16 +2,21 @@
 (function () {
   'use strict';
 
-  const KEY = 'nc_wa_appid';
+  const KEY_APPID    = 'nc_wa_appid';
+  const KEY_PROXYURL = 'nc_wa_proxy';
 
-  const getAppId = () => NC.store.get(KEY, null);
-  const setAppId = (id) => NC.store.set(KEY, id ? id.trim() : null);
-  const hasAppId = () => !!getAppId();
+  const getAppId    = () => NC.store.get(KEY_APPID, null);
+  const setAppId    = (id)  => NC.store.set(KEY_APPID, id ? id.trim() : null);
+  const hasAppId    = () => !!getAppId();
+
+  const getProxyUrl = () => NC.store.get(KEY_PROXYURL, null);
+  const setProxyUrl = (url) => NC.store.set(KEY_PROXYURL, url ? url.trim().replace(/\/$/, '') : null);
+  const hasProxy    = () => !!getProxyUrl();
 
   /* ── NUTRIENT NAME → our key mapping ──
      Each entry: [[name aliases...], ourKey, targetUnit]
-     Names are matched case-insensitively, whitespace-normalized,
-     against the left-hand side of WolframAlpha's "nutrient | value" rows.
+     Matched case-insensitively, whitespace-normalized, against the
+     left-hand side of WolframAlpha's "nutrient | value" rows.
   */
   const MAPPING = [
     [['calories','energy','caloric content','total calories'],       'calories',   'kcal'],
@@ -56,11 +61,8 @@
     if (isNaN(val)) return null;
     const srcUnit = (m[2] || '').toLowerCase().replace('kcals', 'kcal');
 
-    /* Unit conversions into targetUnit */
     if (srcUnit === 'iu') {
-      /* Vitamin D: 40 IU = 1 mcg (D3/D2 roughly equivalent here) */
       if (targetUnit === 'mcg') val = +(val / 40).toFixed(3);
-      /* Vitamin A, E etc. — won't reach here since we don't map them */
     } else if ((srcUnit === 'μg' || srcUnit === 'µg' || srcUnit === 'mcg') && targetUnit === 'mg') {
       val = +(val / 1000).toFixed(5);
     } else if (srcUnit === 'mg' && targetUnit === 'mcg') {
@@ -69,9 +71,9 @@
       val = +(val * 1000).toFixed(2);
     } else if (srcUnit === 'g' && targetUnit === 'mcg') {
       val = +(val * 1e6).toFixed(0);
+    } else if (srcUnit === 'kj' && targetUnit === 'kcal') {
+      val = +(val / 4.184).toFixed(1);
     }
-    /* kj → kcal: 1 kcal = 4.184 kJ */
-    if (srcUnit === 'kj' && targetUnit === 'kcal') val = +(val / 4.184).toFixed(1);
 
     return val;
   };
@@ -79,7 +81,7 @@
   /* Scan all pods' plaintext for pipe-delimited rows "nutrient | value unit" */
   const parsePods = (pods) => {
     const nutrients = {};
-    const matched = [];   // human-readable labels of what was found
+    const matched = [];
 
     for (const pod of (pods || [])) {
       for (const sub of (pod.subpods || [])) {
@@ -95,14 +97,27 @@
             const val = parseVal(valStr, mapping.targetUnit);
             if (val !== null) {
               nutrients[mapping.key] = val;
-              const label = NC.NUTRIENTS[mapping.key]?.label || mapping.key;
-              matched.push(label);
+              matched.push(NC.NUTRIENTS[mapping.key]?.label || mapping.key);
             }
           }
         }
       }
     }
     return { nutrients, matched };
+  };
+
+  /* Build the fetch URL — direct to WolframAlpha, or via the CORS proxy */
+  const buildUrl = (query, appId) => {
+    const proxy = getProxyUrl();
+    if (proxy) {
+      /* Proxy receives ?q=...&appid=... and forwards to WolframAlpha */
+      const p = new URLSearchParams({ q: query, appid: appId });
+      return `${proxy}?${p}`;
+    }
+    /* Direct call — will be blocked by CORS in a browser unless the server
+       sends Access-Control-Allow-Origin (WolframAlpha does not). */
+    const p = new URLSearchParams({ input: query, appid: appId, output: 'json', format: 'plaintext' });
+    return `https://api.wolframalpha.com/v2/query?${p}`;
   };
 
   /* Main lookup — returns { nutrients, matched, query } */
@@ -114,38 +129,43 @@
       throw err;
     }
 
-    const params = new URLSearchParams({ input: query, appid: appId, output: 'json', format: 'plaintext' });
+    const url = buildUrl(query, appId);
     let resp;
     try {
-      resp = await fetch(`https://api.wolframalpha.com/v2/query?${params}`);
+      resp = await fetch(url);
     } catch (e) {
-      const err = new Error('Network error — check your connection and that HTTPS is in use.');
-      err.code = 'network';
+      /* fetch() throws TypeError for CORS blocks and genuine network failures.
+         If no proxy is configured, the CORS block is the likely cause. */
+      const err = new Error(
+        hasProxy()
+          ? 'Could not reach the proxy server. Check your connection and the proxy URL in Profile settings.'
+          : 'Browser blocked the request (CORS). Set up the Cloudflare proxy in Profile → WolframAlpha → Proxy URL.'
+      );
+      err.code = hasProxy() ? 'network' : 'cors';
       throw err;
     }
 
     if (resp.status === 403) {
-      const err = new Error('Invalid App ID — check the key in your Profile settings.');
+      const err = new Error('Invalid App ID — check the key in Profile → WolframAlpha.');
       err.code = 'auth';
       throw err;
     }
     if (!resp.ok) {
-      throw new Error(`WolframAlpha API error ${resp.status}`);
+      throw new Error(`WolframAlpha error ${resp.status}`);
     }
 
     let data;
     try { data = await resp.json(); } catch {
-      throw new Error('Unexpected response from WolframAlpha.');
+      throw new Error('Unexpected response — check that the proxy URL is correct.');
     }
 
     const qr = data?.queryresult;
     if (!qr) throw new Error('Malformed API response.');
 
     if (!qr.success) {
-      /* Collect "did you mean" suggestions if available */
       const suggestions = [].concat(qr.didyoumeans?.didyoumean || [])
         .map(s => s.val || s['#text'] || '').filter(Boolean);
-      const err = new Error('WolframAlpha returned no results for this query.');
+      const err = new Error('WolframAlpha returned no results. Try rephrasing.');
       err.code = 'no_results';
       err.suggestions = suggestions;
       throw err;
@@ -155,5 +175,5 @@
     return { nutrients, matched, query };
   };
 
-  window.NCWolfram = { getAppId, setAppId, hasAppId, lookup };
+  window.NCWolfram = { getAppId, setAppId, hasAppId, getProxyUrl, setProxyUrl, hasProxy, lookup };
 })();
